@@ -5,22 +5,32 @@ import os, sys
 
 
 iniString1="""export PYTHONPATH=/space/heptools/iminuit/lib/python2.7/site-packages/ 
-echo $JOB_ID $HOME $USER $JOB_ID  $JOB_NAME $HOSTNAME $TASK_ID   
-scratchDIR="/scratch/${JOB_ID}.aweiler_scratch/"
-echo $scratchDIR
-mkdir $scratchDIR
-cd $scratchDIR
+SECONDS=0
+echo $TMPDIR $JOB_ID $HOME $USER $JOB_ID  $JOB_NAME $HOSTNAME $TASK_ID   
+cd $TMPDIR
 cp -Rv /home/t30/wlr/gi23pah/Projects/EW_Fastlim/grid_generation .
 cd grid_generation
 """
 
-mainString = " 8 LO 1 \n"
+mainString = " 8 NLO 1 \n"
 #mainString = " 8 NLO 1 \n"
 
-finalString="""pwd
+
+def finalString(fname):
+	finalS="""pwd
 ls
+echo "[LOG] Time since start $SECONDS"
+if [ $SECONDS -lt 300 ]
+then
+        echo "[LOG] Prospino didn't start! resubmitting again"
+        ssh zuse "qsub """ + fname + """ "
+fi
+
+
 cp -v out*.dat /home/t30/wlr/gi23pah/Projects/EW_Fastlim/grid_results/
-rm -rf $scratchDIR\n"""
+\n"""
+	return finalS
+
 
 #  1) main_CCsame.py  <==  grid_same.dat
 #  2) main_NNsame.py  <==  grid_same.dat
@@ -42,40 +52,40 @@ for i, line in enumerate(fp):
     runfile = open(fname,"w")
     runfile.write(iniString1)
     runfile.write("python main.py CCsame "+ line.rstrip()+ mainString)
-    runfile.write(finalString)
+    runfile.write(finalStringi(fname))
     runfile.close()
     print "qsub ", fname
 fp.close()
 
-# fp = open("grid_same.dat")
-# for i, line in enumerate(fp):
-#     fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NNsame_"+str(i)+".sh"
-#     runfile = open(fname,"w")
-#     runfile.write(iniString1)
-#     runfile.write("python main.py NNsame "+ line.rstrip()+ mainString)
-#     runfile.write(finalString)
-#     runfile.close()
-#     print "qsub ", fname
-# fp.close()
+fp = open("grid_same.dat")
+for i, line in enumerate(fp):
+     fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NNsame_"+str(i)+"_LO.sh"
+     runfile = open(fname,"w")
+     runfile.write(iniString1)
+     runfile.write("python main.py NNsame "+ line.rstrip()+ mainString)
+     runfile.write(finalString(fname))
+     runfile.close()
+     print "qsub ", fname
+fp.close()
 
-# fp = open("grid_XX++.dat")
-# for i, line in enumerate(fp):
-#     fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NN++_"+str(i)+".sh"
-#     runfile = open(fname,"w")
-#     runfile.write(iniString1)
-#     runfile.write("python main.py NN "+ line.rstrip()+ mainString)
-#     runfile.write(finalString)
-#     runfile.close()
-#     print "qsub ", fname
-# fp.close()
+fp = open("grid_XX++.dat")
+for i, line in enumerate(fp):
+    fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NN++_"+str(i)+".sh"
+    runfile = open(fname,"w")
+    runfile.write(iniString1)
+    runfile.write("python main.py NN "+ line.rstrip()+ mainString)
+    runfile.write(finalString(fname))
+    runfile.close()
+    print "qsub ", fname
+fp.close()
 
-# fp = open("grid_XX+-.dat")
-# for i, line in enumerate(fp):    
-#     fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NN+-_"+str(i)+".sh"
-#     runfile = open(fname,"w")
-#     runfile.write(iniString1)
-#     runfile.write("python main.py NN "+ line.rstrip()+ mainString)
-#     runfile.write(finalString)
-#     runfile.close()
-#     print "qsub ", fname
-# fp.close()
+fp = open("grid_XX+-.dat")
+for i, line in enumerate(fp):    
+    fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NN+-_"+str(i)+".sh"
+    runfile = open(fname,"w")
+    runfile.write(iniString1)
+    runfile.write("python main.py NN "+ line.rstrip()+ mainString)
+    runfile.write(finalString(fname))
+    runfile.close()
+    print "qsub ", fname
+fp.close()
