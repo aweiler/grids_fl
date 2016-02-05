@@ -3,6 +3,10 @@
 
 import os, sys
 
+#scriptDir="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/"
+
+scriptDir="/space/gi23pah/EW_Fastlim/clust_submit/"
+
 
 iniString1="""export PYTHONPATH=/space/heptools/iminuit/lib/python2.7/site-packages/ 
 SECONDS=0
@@ -15,6 +19,7 @@ cd grid_generation
 mainString = " 8 NLO 1 \n"
 #mainString = " 8 NLO 1 \n"
 
+queue = " -q longrun "
 
 def finalString(fname):
 	finalS="""pwd
@@ -23,10 +28,10 @@ echo "[LOG] Time since start $SECONDS"
 if [ $SECONDS -lt 300 ]
 then
         echo "[LOG] Prospino didn't start! resubmitting again"
-        ssh zuse "qsub """ + fname + """ "
+        ssh zuse "qsub """ + queue + fname + """ "
 fi
 
-
+echo "[LOG] total runtime $SECONDS"
 cp -v out*.dat /home/t30/wlr/gi23pah/Projects/EW_Fastlim/grid_results/
 \n"""
 	return finalS
@@ -48,44 +53,44 @@ cp -v out*.dat /home/t30/wlr/gi23pah/Projects/EW_Fastlim/grid_results/
 
 fp = open("grid_same.dat")
 for i, line in enumerate(fp):
-    fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_CCsame_"+str(i)+"_LO.sh"
+    fname=scriptDir+"clustrun_CCsame_"+str(i)+"_NLO.sh"
     runfile = open(fname,"w")
     runfile.write(iniString1)
     runfile.write("python main.py CCsame "+ line.rstrip()+ mainString)
-    runfile.write(finalStringi(fname))
+    runfile.write(finalString(fname))
     runfile.close()
-    print "qsub ", fname
+    print "qsub ", queue, fname
 fp.close()
 
 fp = open("grid_same.dat")
 for i, line in enumerate(fp):
-     fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NNsame_"+str(i)+"_LO.sh"
+     fname=scriptDir+"clustrun_NNsame_"+str(i)+"_NLO.sh"
      runfile = open(fname,"w")
      runfile.write(iniString1)
      runfile.write("python main.py NNsame "+ line.rstrip()+ mainString)
      runfile.write(finalString(fname))
      runfile.close()
-     print "qsub ", fname
+     print "qsub ",queue, fname
 fp.close()
 
 fp = open("grid_XX++.dat")
 for i, line in enumerate(fp):
-    fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NN++_"+str(i)+".sh"
+    fname=scriptDir+"clustrun_NN++_"+str(i)+"_NLO.sh"
     runfile = open(fname,"w")
     runfile.write(iniString1)
     runfile.write("python main.py NN "+ line.rstrip()+ mainString)
     runfile.write(finalString(fname))
     runfile.close()
-    print "qsub ", fname
+    print "qsub ", queue, fname
 fp.close()
 
 fp = open("grid_XX+-.dat")
 for i, line in enumerate(fp):    
-    fname="/home/t30/wlr/gi23pah/Projects/EW_Fastlim/clust_submit/clustrun_NN+-_"+str(i)+".sh"
+    fname=scriptDir+"clustrun_NN+-_"+str(i)+"_NLO.sh"
     runfile = open(fname,"w")
     runfile.write(iniString1)
     runfile.write("python main.py NN "+ line.rstrip()+ mainString)
     runfile.write(finalString(fname))
     runfile.close()
-    print "qsub ", fname
+    print "qsub ", queue , fname
 fp.close()
