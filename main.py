@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import os, sys
+import os, sys, random
 import numpy as np
 from numpy import linalg as la
 from numpy import random as rn
@@ -15,6 +15,80 @@ def get_line(List):
     for i in range(1, len(List)):
         line += '  ' + str(List[i])
     return line
+
+def get_xsec_from_prospino(mNneu, mCha, msf, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch):
+
+    ep = 10**(-15)
+    ep = 0
+    # if U[0,0] == 0: U[0,0] = ep
+    # if V[0,0] == 0: V[0,0] = ep
+    # if N[0,0] == 0: N[0,0] = ep
+    # if N[0,1] == 0: N[0,1] = N[1,0] = ep
+
+    for i in xrange(4):
+        for j in xrange(4):
+            #x = random.uniform(-1, 1)
+            if N[i,j] == 0: N[i,j] = ep
+
+    for i in xrange(2):
+        for j in xrange(2):
+            #x = random.uniform(-1, 1)            
+            if U[i,j] == 0: U[i,j] = ep
+            #x = random.uniform(-1, 1)
+            if V[i,j] == 0: V[i,j] = ep
+
+    arguments = [
+                str(mNeu[0]), str(mNeu[1]), str(mNeu[2]), str(mNeu[3]),
+                str(mCha[0]), str(mCha[1]), str(msf),
+                str(U[0,0]), str(U[0,1]), str(U[1,0]), str(U[1,1]),
+                str(V[0,0]), str(V[0,1]), str(V[1,0]), str(V[1,1]),                     
+                str(N[0,0]), str(N[0,1]), str(N[0,2]), str(N[0,3]),
+                str(N[1,0]), str(N[1,1]), str(N[1,2]), str(N[1,3]),
+                str(N[2,0]), str(N[2,1]), str(N[2,2]), str(N[2,3]),
+                str(N[3,0]), str(N[3,1]), str(N[3,2]), str(N[3,3]),
+                ]
+
+    input_array = ['python', 'write_slha_cn.py'] + arguments
+    sbproc.call( input_array )
+
+    input_argument = ['slha.out', str(i1_pros), str(i2_pros)]
+    input_argument += [sqrtS, nlo_string, error_switch]    
+    sbproc.call( ['sh', 'run_prospino.sh'] + input_argument, stdout=FNULL )
+    #sbproc.call( ['sh', 'run_prospino.sh'] + input_argument )
+
+    #sbproc.call( ['sh', 'run_prospino.sh', 'slha.out', str(i1_pros), str(i2_pros)] )
+
+    #sbproc.call( ['cp', 'slha.out', 'slha_tmp/' + str(i) + '.out'], stdout=FNULL )
+
+    f = open('prospino.out','r')
+    if nlo_string == 'LO': column = 14
+    if nlo_string == 'NLO': column = 15
+    xval = []
+    if error_switch == '0':
+        xval.append(float( f.readline().split()[column]))
+    elif error_switch == '1':
+        xval.append(float( f.readline().split()[column]))
+        xval.append(float( f.readline().split()[column]))
+        xval.append(float( f.readline().split()[column]))        
+    else:
+        print 'ERROR!! error_switch has to be 0 or 1!'
+        exit()
+
+    return xval 
+
+def get_zero_matrices():
+
+    U = np.array([[0.,0.],[0.,0.]])
+    V = np.array([[0.,0.],[0.,0.]])
+
+    N = np.array([
+        [0., 0., 0., 0.], 
+        [0., 0., 0., 0.], 
+        [0., 0., 0., 0.], 
+        [0., 0., 0., 0.]
+        ])
+
+    return U, V, N
 
 def get_N_matrix():
 
@@ -59,116 +133,83 @@ def get_VU():
     U = get_2by2(a2)
     return V, U
 
-def get_xsec_from_prospino(mNneu, mCha, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch):
 
-    arguments = [
-                str(mNeu[0]), str(mNeu[1]), str(mNeu[2]), str(mNeu[3]),
-                str(mCha[0]), str(mCha[1]), str(msf),
-                str(U[0,0]), str(U[0,1]), str(U[1,0]), str(U[1,1]),
-                str(V[0,0]), str(V[0,1]), str(V[1,0]), str(V[1,1]),                     
-                str(N[0,0]), str(N[0,1]), str(N[0,2]), str(N[0,3]),
-                str(N[1,0]), str(N[1,1]), str(N[1,2]), str(N[1,3]),
-                str(N[2,0]), str(N[2,1]), str(N[2,2]), str(N[2,3]),
-                str(N[3,0]), str(N[3,1]), str(N[3,2]), str(N[3,3]),
-                ]
+sw = sqrt(1. - 8.02463984**2 / 9.11876000**2)
+cw = sqrt(1 - sw**2)
+r2 = sqrt(2.)
 
-    input_array = ['python', 'write_slha_cn.py'] + arguments
-    sbproc.call( input_array )
-
-    input_argument = ['slha.out', str(i1_pros), str(i2_pros)]
-    input_argument += [sqrtS, nlo_string, error_switch]    
-    callOK = sbproc.check_call( ['sh', 'run_prospino.sh'] + input_argument )
-    print "Subprocess finished with value " , callOK
-    # sbproc.call( ['sh', 'run_prospino.sh'] + input_argument, stdout=FNULL ) # original Kazuki
-    #sbproc.call( ['sh', 'run_prospino.sh', 'slha.out', str(i1_pros), str(i2_pros)] )
-
-    #sbproc.call( ['cp', 'slha.out', 'slha_tmp/' + str(i) + '.out'], stdout=FNULL )
-
-    f = open('prospino.out','r')
-    if nlo_string == 'LO': column = 14
-    if nlo_string == 'NLO': column = 15
-    xval = []
-    if error_switch == '0':
-        xval.append(float( f.readline().split()[column]))
-    elif error_switch == '1':
-        xval.append(float( f.readline().split()[column]))
-        xval.append(float( f.readline().split()[column]))
-        xval.append(float( f.readline().split()[column]))        
-    else:
-        print 'ERROR!! error_switch has to be 0 or 1!'
-        exit()
-
-    return xval 
+deno = sw * cw
+Lu = ( 1./2. - 2./3. * sw**2 ) / deno
+Ld = (-1./2 - (-1./3.) * sw**2 ) / deno
+Ru = (-2./3. * sw**2 ) / deno
+Rd = ( - (-1./3.) * sw**2 ) / deno
 
 
-def get_Mline(run_mode, i1, i2):
+def Lut(i, n): 
+    return (n[i, 0]*cw + n[i, 1]*sw) * (2./3.) + (-n[i, 0]*sw + n[i, 1]*cw) * Lu
 
-    if run_mode in ['CCsame', 'C2+C1-', 'C2-C1+']:
-        data = {}
-        V, U = get_VU()
-        elem = []
-        elem.append( V[0,i1] * V[0,i2] )
-        elem.append( U[0,i1] * U[0,i2] )
-        elem.append( V[1,i1] * V[1,i2] )
-        elem.append( U[1,i1] * U[1,i2] )
+def Ldt(i, n): 
+    return (n[i, 0]*cw + n[i, 1]*sw) * (-1./3.) + (-n[i, 0]*sw + n[i, 1]*cw) * Ld
 
-        Mline = []
-        for i in range(4):
-            for j in range(i, 4):
-                Mline.append( elem[i]*elem[j] )
-        data['Mline'] = Mline
-        data['V'] = V
-        data['U'] = U
-        data['N'] = np.identity(4)
-        return data
+def Rut(i, n): 
+    return (n[i, 0]*cw + n[i, 1]*sw) * (2./3.) + (-n[i, 0]*sw + n[i, 1]*cw) * Ru
 
-    if run_mode in ['NNsame', 'NN']:
+def Rdt(i, n): 
+    return (n[i, 0]*cw + n[i, 1]*sw) * (-1./3.) + (-n[i, 0]*sw + n[i, 1]*cw) * Rd
 
-        data = {}
-        N = get_N_matrix()
+def gNC( i, j, n, v, u ):
+    elem1 = n[i, 1] * v[j, 0] - n[i, 3] * v[j, 1]/sqrt(2.) 
+    elem2 = v[j, 0] * Lut(i, n)
+    elem3 = n[i, 1] * u[j, 0] + n[i, 2] * u[j, 1]/sqrt(2.) 
+    elem4 = u[j, 0] * Ldt(i, n)
+    return [elem1, elem2, elem3, elem4]
 
-        elem = []
-        elem.append( N[i1,0] * N[i2,0] )  # B-B
-        elem.append( N[i1,0] * N[i2,1] + N[i1,1] * N[i2,0] )  # B-W        
-        elem.append( N[i1,1] * N[i2,1] )  # W-W
-        elem.append( N[i1,2] * N[i2,2] - N[i1,3] * N[i2,3] )  # Hd-Hd
+def cNC( v, c ):
+    if c == 0: return v[0]**2 + v[2]**2
+    if c == 1: return v[1]**2 + v[3]**2
+    if c == 2: return 2.*( v[0]*v[1] - v[2]*v[3] )
+    if c == 3: return 2.*( v[1]*v[2] - v[0]*v[3] )
+    if c == 4: return 2.* v[0]*v[2]
+    if c == 5: return 2.* v[1]*v[3]
 
-        Mline = []
-        nmax = len(elem)
-        for i in range(nmax):
-            for j in range(i, nmax):
-                Mline.append( elem[i]*elem[j] )
-        data['Mline'] = Mline
-        data['V'] = np.identity(2)
-        data['U'] = np.identity(2)
-        data['N'] = N
-        return data
+def gNN( i, j, n ):
+    elem1 = n[i, 3] * n[j, 3] - n[i, 2] * n[j, 2]
+    elem2 = Lut(i, n) * Lut(j, n)
+    elem3 = Rut(i, n) * Rut(j, n)
+    elem4 = Ldt(i, n) * Ldt(j, n)
+    elem5 = Rdt(i, n) * Rdt(j, n)
+    return [elem1, elem2, elem3, elem4, elem5]
 
-    if run_mode in ['NC+', 'NC-']:
+def cNN( v, c ):
+    if c == 0: return v[0]**2
+    if c == 1: return v[1]**2 + v[2]**2
+    if c == 2: return 2.*( Lu * v[0] * v[1] + Ru * v[0] * v[2] )
+    if c == 3: return v[3]**2 + v[4]**2
+    if c == 4: return 2.*( Ld * v[0] * v[3] + Rd * v[0] * v[4] )    
 
-        data = {}
 
-        V, U = get_VU()
-        N = get_N_matrix()
+def gCC( i, j, u, v ):
+    elem1 = u[i, 0] * u[j, 0]
+    elem2 = v[i, 0] * v[j, 0]
+    elem3 = u[i, 1] * u[j, 1]
+    elem4 = v[i, 1] * v[j, 1]
+    return [elem1, elem2, elem3, elem4]
 
-        elem = []
-        elem.append( N[i1,0] * V[0,i2] )  # B-W
-        elem.append( N[i1,0] * U[0,i2] )  # B-W        
-        elem.append( N[i1,1] * V[0,i2] )  # W-W
-        elem.append( N[i1,1] * U[0,i2] )  # W-W
-        elem.append( N[i1,2] * U[1,i2] )  # Hd-Hd        
-        elem.append( N[i1,3] * V[1,i2] )  # Hu-Hu
+def cCC( v, c ):
+    if c == 0: return v[0]**2
+    if c == 1: return 2. * v[0] * v[1]
+    if c == 2: return 2. * v[0] * v[2]
+    if c == 3: return 2. * v[0] * v[3]
+    if c == 4: return v[1]**2
+    if c == 5: return 2. * v[1] * v[2]
+    if c == 6: return 2. * v[1] * v[3]
+    if c == 7: return v[2]**2 + v[3]**2
+    if c == 8: return 2. * v[2] * v[3]
+    if c == 9: return 1.
+    if c == 10: return v[0] - v[1] 
+    if c == 11: return v[2] + v[3]
 
-        Mline = []
-        nmax = len(elem)
-        for i in range(nmax):
-            for j in range(i, nmax):
-                Mline.append( elem[i]*elem[j] )
-        data['Mline'] = Mline
-        data['V'] = V
-        data['U'] = U
-        data['N'] = N
-        return data
+
 
 #####################################################
 #####################################################
@@ -246,43 +287,24 @@ f = open(outfile,'w')
 #####################################################
 #####################################################
 
-mdec = 2000
-msf = mQ
+mdec = 500000
 mCha = [mdec, mdec]
 mNeu = [mdec, mdec, mdec, mdec]    
-nsamp = 20
-if run_mode == 'CCsame':
-    i1, i2 = 0, 0   # <== C1, C1 production
-    i1_pros, i2_pros = i1+5, i2+7
-    mCha = [m1, mdec]
-if run_mode == 'NNsame':
-    i1, i2 = 0, 0
-    i1_pros, i2_pros = i1+1, i2+1
-    mNeu = [m1, mdec, mdec, mdec]    
-if run_mode == 'NN':
-    i1, i2 = 0, 1
-    i1_pros, i2_pros = i1+1, i2+1    
-    mNeu = [mS, mL, mdec, mdec]    
+nsamp = 12
 if run_mode == 'NC+':
     i1, i2 = 0, 0
     i1_pros, i2_pros = i1 + 1, i2 + 5 ## C+ ##
     mCha = [mC, mdec]
     mNeu = [mN, mdec, mdec, mdec]        
-    nsamp = 50
 if run_mode == 'NC-':
     i1, i2 = 0, 0
     i1_pros, i2_pros = i1 + 1, i2 + 7 ## C- ##
     mCha = [mC, mdec]
     mNeu = [mN, mdec, mdec, mdec]            
-    nsamp = 50
-if run_mode == 'C2+C1-':
-    i1, i2 = 0, 1   
-    i1_pros, i2_pros = i1+7, i2+5 # <== C1-, C2+ production
-    mCha = [mS, mL]
-if run_mode == 'C2-C1+':
-    i1, i2 = 0, 1   
-    i1_pros, i2_pros = i1+5, i2+7 # <== C1+, C2- production
-    mCha = [mS, mL]
+if run_mode == 'NN':
+    i1, i2 = 0, 1
+    i1_pros, i2_pros = i1+1, i2+1    
+    mNeu = [mS, mL, mdec, mdec]
 
 mass_lines  = "mC = " + get_line(mCha) + '\n'
 mass_lines += "mN = " + get_line(mNeu) + '\n'
@@ -298,220 +320,188 @@ i1, i2 (prospino) = {i1_pros}, {i2_pros}
 #######################################################
 """.format(mQ=str(mQ),i1=str(i1),i2=str(i2),i1_pros=str(i1_pros),i2_pros=str(i2_pros))
 print run_info
-f.write(run_info)
 
-Coeff = []
-#(mC1, mQ) = (500, 3000)
-#Coeff = np.array([0.00118747693324, 0.00177949336646, 0.00136938810036, 0.000942739583667, 0.00110269896945, 0.000873844048213, 0.00135227791823, 0.000498039005221, 0.000372399410175, 0.000538524411907, ])
-#(mC1, mQ) = (300, -500, 1000)
-#Coeff = np.array([0.000277325009582, 0.000123795840113, -0.000277325009582, -0.000123795840113, 0.000326157067479, -0.000123795840113, -0.000326157067479, 0.000277325009582, 0.000123795840113, 0.000326157067479, ])
-if len(Coeff) == 0:
+# i1_pros, i2_pros = '5', '8'
+# i1, i2 = 0, 1
+# sqrtS = '8'
+# nlo_string = 'LO'
+# error_switch = '0'
+# mQ = 500
+# mNeu = [100, 200, 300, 400]
+# mCha = [110, 110]
 
-    isamp = 0
-    samp = []
-    Mat = []
-    while len(samp) < nsamp:
+if error_switch == '0': mu_list = ['1.0']
+if error_switch == '1': mu_list = ['0.5', '1.0', '2.0']
+n_scale = len(mu_list)
 
-        data = get_Mline(run_mode, i1, i2)
-        Mat.append(data['Mline'])
-        samp.append(data)
+if run_mode in ['NC+', 'NC-']:
 
-    Mat = np.array(Mat)
-    #print np.shape(Mat)
-    #print Mat
+    a0, a1, a2, a3, a4, a5 = [], [], [], [], [], []
 
-    ######################################
-    #    Obtaining Cross Section
-    ######################################
-    xsec_05 = np.array([])
-    xsec_10 = np.array([])
-    xsec_20 = np.array([])    
-    print 'Run Prospino'
-    for i in range(nsamp):
+    ##################################################################
+    ###                a0
+    ##################################################################
 
-        V = samp[i]['V']
-        U = samp[i]['U']
-        N = samp[i]['N']
+    U, V, N = get_zero_matrices()
 
-        f.write('---- sample {isamp} ---- \n'.format(isamp=i))
-        f.write('V = \n')
-        np.savetxt(f, V)
-        f.write('U = \n')        
-        np.savetxt(f, U)
-        f.write('N = \n')                
-        np.savetxt(f, N)
-        f.write('Mline = \n')                
-        np.savetxt(f, samp[i]['Mline'])
+    N[0,3], N[3,0] = r2, r2
+    V[0,1], V[1,0] = 1., 1.
 
-        xval = get_xsec_from_prospino(mNeu, mCha, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    xsec = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    a0 = xsec
+    #xsec = a0 = 1.58071
+    #print gNC(0, 0, N, V, U)
+    #print 'a0 =', a0
 
-        f.write('prospino xsec: \n')                        
-        if error_switch == '1':
-            xsec_05 = np.append(xsec_05, xval[0] )
-            xsec_10 = np.append(xsec_10, xval[1] )
-            xsec_20 = np.append(xsec_20, xval[2] )
-            f.write(str(xval[0]) + '     --- 0.5 \n')                        
-            f.write(str(xval[1]) + '     --- 1.0 \n')                        
-            f.write(str(xval[2]) + '     --- 2.0 \n')                        
-        if error_switch == '0':
-            xsec_10 = np.append(xsec_10, xval[0] )
-            f.write(str(xval[0]) + '     --- 1.0 \n')                                    
-        print i, xval
-    if error_switch == '1': xsec_list = [xsec_05, xsec_10, xsec_20]
-    if error_switch == '0': xsec_list = [xsec_10]
+    ##################################################################
+    ###                a1
+    ##################################################################
 
+    U, V, N = get_zero_matrices()
 
-    f.write('======================== \n')                        
+    n11 = 1./(cw*(2./3.) - (1./2. - sw**2 * (2./3.) )/cw)
 
-    ######################################
-    #    Obtaining Coeff
-    ######################################
-    #Minv = la.inv( Mat )
-    #Coeff = np.dot(Minv, xsec)
+    N[0,0] = n11
+    V[0,0] = 1.
 
-    xsec_repro = []
-    chi2_result = []
+    xsec = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    a1 = xsec
+    #xsec = a1 = 0.0572713
+    #print gNC(0, 0, N, V, U)
+    print 'a1 =', a1
+
+    ##################################################################
+    ###                a2
+    ##################################################################
+
+    U, V, N = get_zero_matrices()
+    x = random.uniform(-1, 1)
+
+    N[0,0], N[0,1], N[1,0] = x, 1., 1.
+    V[0,0] = 1.
+
+    xsec = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    gnc = gNC(0, 0, N, V, U)
+
+    for i in xrange(n_scale):
+        a2__ = (xsec[i] - a0[i] * cNC(gnc, 0) - a1[i] * cNC(gnc, 1))/cNC(gnc, 2)
+        a2.append( a2__ )
+
+    #print gNC(0, 0, N, V, U)
+    print 'a2 =', a2
+
+    ##################################################################
+    ###                a3
+    ##################################################################
+
+    U, V, N = get_zero_matrices()
+    x = random.uniform(-1, 1)
+
+    n11 = 1./(-cw/3. - (-1./2. + sw**2/3.)/cw)
+
+    N[0,0], N[0,3], N[3,0] = n11, x*r2, x*r2
+    V[0,1], V[1,0] = 1., 1.
+    U[0,0] = 1.
+
+    xsec = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    gnc = gNC(0, 0, N, V, U)
+
+    for i in xrange(n_scale):
+        a3__ = (xsec[i] - a0[i] * cNC(gnc, 0) - a1[i] * cNC(gnc, 1))/cNC(gnc, 3)
+        a3.append(a3__)
+
+    #print gNC(0, 0, N, V, U)
+    print 'a3 =', a3
+
+    ##################################################################
+    ###                a4
+    ##################################################################
+
+    U, V, N = get_zero_matrices()
+    x = random.uniform(-1, 1)
+
+    N[0,2] = N[2,0] = r2
+    N[0,3] = N[3,0] = -x*r2
+    V[0,1] = V[1,0] = 1.
+    U[0,1] = U[1,0] = 1.
+
+    xsec = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    gnc = gNC(0, 0, N, V, U)
+
+    for i in xrange(n_scale):
+        a4__ = (xsec[i] - a0[i] * cNC(gnc, 0))/cNC(gnc, 4)
+        a4.append( a4__ )
+
+    #print gNC(0, 0, N, V, U)
+    print 'a4 =', a4
+
+    ##################################################################
+    ###                a5
+    ##################################################################
+
+    U, V, N = get_zero_matrices()
+    x = random.uniform(-1, 1)
+
+    n11 = 1./(-cw/3. - (-1./2. + sw**2/3.)/cw)
+
+    N[0,0] = n11
+
+    V[0,0] = 1.
+    U[0,0] = x
+
+    xsec = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+    gnc = gNC(0, 0, N, V, U)
+
+    for i in xrange(n_scale):
+        a5__ = (xsec[i] - a1[i] * cNC(gnc, 1))/cNC(gnc, 5)
+        a5.append( a5__ )
+    #print gNC(0, 0, N, V, U)
+    print 'a5 =', a5
+
+    ##################################################################
+    ###                Results
+    ##################################################################
+
     Coeff = []
-    iscale = 0
-    for xsec in xsec_list:
-
-        f.write('Mat {isc} = \n'.format(isc=iscale))
-        np.savetxt(f, Mat)
-        f.write('xsec {isc} = \n'.format(isc=iscale))
-        np.savetxt(f, xsec)
-        iscale += 1
-
-        ######################################
-        if 'NC' in run_mode:
-
-            def chi2(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21):
-                __coeff = np.array([F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21])
-                MR = (np.dot( Mat, __coeff ) - xsec) / xsec
-                ML = np.transpose(MR)
-                return np.dot(ML, MR)
-
-            m = im.Minuit(chi2, 
-                F1=0, F2=0, F3=0, F4=0, F5=0, F6=0, F7=0, F8=0, F9=0, F10=0,
-                F11=0, F12=0, F13=0, F14=0, F15=0, F16=0, F17=0, F18=0, F19=0, F20=0,
-                F21=0,
-                error_F1=0.001, 
-                error_F2=0.001, 
-                error_F3=0.001, 
-                error_F4=0.001, 
-                error_F5=0.001, 
-                error_F6=0.001, 
-                error_F7=0.001, 
-                error_F8=0.001, 
-                error_F9=0.001, 
-                error_F10=0.001, 
-                error_F11=0.001, 
-                error_F12=0.001, 
-                error_F13=0.001, 
-                error_F14=0.001, 
-                error_F15=0.001, 
-                error_F16=0.001, 
-                error_F17=0.001, 
-                error_F18=0.001, 
-                error_F19=0.001, 
-                error_F20=0.001, 
-                error_F21=0.001, 
-                print_level=1) 
-
-            m.migrad()
-            vals = m.values
-
-            F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21 = vals['F1'], vals['F2'], vals['F3'], vals['F4'], vals['F5'], vals['F6'], vals['F7'], vals['F8'], vals['F9'], vals['F10'], vals['F11'], vals['F12'], vals['F13'], vals['F14'], vals['F15'], vals['F16'], vals['F17'], vals['F18'], vals['F19'], vals['F20'], vals['F21']
-            chi2_result.append(chi2(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21)) 
-            __coeff = np.array([F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21])
-        ######################################
-        else:
-            def chi2(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10):
-                __coeff = np.array([F1, F2, F3, F4, F5, F6, F7, F8, F9, F10])
-                MR = (np.dot( Mat, __coeff ) - xsec) / xsec
-                ML = np.transpose(MR)
-                return np.dot(ML, MR)
-
-            m = im.Minuit(chi2, 
-                F1=0, F2=0, F3=0, F4=0, F5=0, F6=0, F7=0, F8=0, F9=0, F10=0,
-                error_F1=0.001, 
-                error_F2=0.001, 
-                error_F3=0.001, 
-                error_F4=0.001, 
-                error_F5=0.001, 
-                error_F6=0.001, 
-                error_F7=0.001, 
-                error_F8=0.001, 
-                error_F9=0.001, 
-                error_F10=0.001, 
-                print_level=1) 
-
-            m.migrad()
-            vals = m.values
-
-            F1, F2, F3, F4, F5, F6, F7, F8, F9, F10 = vals['F1'], vals['F2'], vals['F3'], vals['F4'], vals['F5'], vals['F6'], vals['F7'], vals['F8'], vals['F9'], vals['F10']
-            chi2_result.append( chi2(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10) )
-            __coeff = np.array([F1, F2, F3, F4, F5, F6, F7, F8, F9, F10])
-        ######################################
-
-        Coeff.append( __coeff )
-        xsec_repro.append( np.dot(Mat, __coeff) )
-
-    ######################################
-    ######################################
-
-    if error_switch == '0': mu_list = ['1.0']
-    if error_switch == '1': mu_list = ['0.5', '1.0', '2.0' ]
+    for i in xrange(n_scale):
+        Coeff.append([a0[i], a1[i], a2[i], a3[i], a4[i]])
 
     result = get_line(mass_string.split('_')) + '\n'
+    result += '---- result ----  \n'
     for i in range(len(mu_list)): 
         result += 'scale=' + mu_list[i] + '\n'
         result += get_line(Coeff[i]) + '\n'
+    result += '---------------- \n'
     print result
     f.write(result)
 
-    outline = ''
-    for i in range(len(mu_list)):
-        mu = mu_list[i]
-        outline += '#######################################################' + '\n'
-        if error_switch == '0': outline += 'LO' + '\n'
-        if error_switch == '1': outline += 'NLO  ' + mu + '\n'          
-        outline += "Chi2 = " + str(chi2_result[i]) + '\n'   
-        outline += "Coeff = np.array([" + get_line(Coeff[i]) + "])" + '\n'
-        outline += "xsec(pros) = " + get_line(xsec_list[i]) + '\n'   
-        outline += "xsec(repro) = " + get_line(xsec_repro[i]) + '\n'
-        outline += "ratio = " + get_line(xsec[i] / xsec_repro[i]) + '\n'
-        outline += '#######################################################' + '\n'
-    print outline
-    f.write(outline)
+    ##################################################################
+    ###                test
+    ##################################################################
+    for itest in xrange(2):
 
-#####################################################
+        N = get_N_matrix()
+        V, U = get_VU()
+        xsec_pros = get_xsec_from_prospino(mNeu, mCha, mQ, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
 
-ntest = 1
-for itest in range(ntest):
+        gnc = gNC(0, 0, N, V, U)
+        xsec_predic = []
+        for i in xrange(n_scale):
+            xsec =  a0[i] * cNC(gnc, 0) + \
+                    a1[i] * cNC(gnc, 1) + \
+                    a2[i] * cNC(gnc, 2) + \
+                    a3[i] * cNC(gnc, 3) + \
+                    a4[i] * cNC(gnc, 4) + \
+                    a5[i] * cNC(gnc, 5) 
+            xsec_predic.append(xsec)
 
-    data = get_Mline(run_mode, i1, i2)
-    U = data['U']    
-    V = data['V']
-    N = data['N']
-    
-    ######################
-    # prospino
-    xsec_pros = get_xsec_from_prospino(mNeu, mCha, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
-
-    ######################
-    # prediction
-    Mline = np.array(data['Mline'])
-    xsec_predic = []
-    for i in range(len(mu_list)):
-        xsec_predic.append( np.dot(Mline, Coeff[i]) )
-
-    outline = '#---  Test  ---#'
-    outline = 'iTest'.rjust(4) + str('prospino').rjust(15) + 'prediction'.rjust(30) + 'ratio'.rjust(30) + 'scale'.rjust(10) + '\n'
-    for i in range(len(mu_list)):
-        mu = mu_list[i]
-        outline += str(itest).rjust(4) + str(xsec_pros[i]).rjust(15) + str(xsec_predic[i]).rjust(30) + str(xsec_predic[i]/xsec_pros[i]).rjust(30) + mu.rjust(10) + '\n'
-    print outline
-    f.write(outline)
+        outline = '#---  Test  ---#'
+        outline = 'iTest'.rjust(4) + str('prospino').rjust(15) + 'prediction'.rjust(25) + 'ratio'.rjust(25) + 'scale'.rjust(10) + '\n'
+        for i in range(len(mu_list)):
+            mu = mu_list[i]
+            outline += str(itest).rjust(4) + str(xsec_pros[i]).rjust(15) + str(xsec_predic[i]).rjust(25) + str(xsec_predic[i]/xsec_pros[i]).rjust(25) + mu.rjust(10) + '\n'
+        print outline
+        f.write(outline)
     f.write(run_info)
 
 exit()

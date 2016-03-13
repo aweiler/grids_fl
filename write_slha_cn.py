@@ -9,7 +9,8 @@ mN3 = sys.argv[3]
 mN4 = sys.argv[4]
 mC1 = sys.argv[5]
 mC2 = sys.argv[6]
-msf = sys.argv[7]
+mqL = mqR = sys.argv[7]
+mdec = 20000
 
 U11, U12, U21, U22 = sys.argv[8], sys.argv[9], sys.argv[10], sys.argv[11]
 V11, V12, V21, V22 = sys.argv[12], sys.argv[13], sys.argv[14], sys.argv[15]
@@ -79,27 +80,27 @@ Block MASS                      # Mass spectrum
    1000035     {mN4}   # ~neutralino(4)
    1000024     {mC1}   # ~chargino(1)   
    1000037     {mC2}   # ~chargino(2)
-   1000001     {msf}   # ~d_L
-   1000002     {msf}   # ~u_L
-   1000003     {msf}   # ~s_L
-   1000004     {msf}   # ~c_L
-   1000005     {msf}   # ~b_1
-   1000006     {msf}   # ~t_1
-   1000011     {msf}   # ~e_L
-   1000012     {msf}   # ~nue_L
-   1000013     {msf}   # ~mu_L
-   1000014     {msf}   # ~numu_L
-   1000015     {msf}   # ~stau_1
-   1000016     {msf}   # ~nu_tau_L
-   2000001     {msf}   # ~d_R
-   2000002     {msf}   # ~u_R
-   2000003     {msf}   # ~s_R
-   2000004     {msf}   # ~c_R
-   2000005     {msf}   # ~b_2
-   2000006     {msf}   # ~t_2
-   2000011     {msf}   # ~e_R
-   2000013     {msf}   # ~mu_R
-   2000015     {msf}   # ~stau_2
+   1000001     {mqL}   # ~d_L
+   1000002     {mqL}   # ~u_L
+   1000003     {mqL}   # ~s_L
+   1000004     {mqL}   # ~c_L
+   2000005     {mqL}   # ~b_2
+   2000006     {mqL}   # ~t_2
+   2000001     {mqR}   # ~d_R
+   2000002     {mqR}   # ~u_R
+   2000003     {mqR}   # ~s_R
+   2000004     {mqR}   # ~c_R
+   1000005     {mqR}   # ~b_1
+   1000006     {mqR}   # ~t_1   
+   2000011     {mdec}   # ~e_R
+   2000013     {mdec}   # ~mu_R
+   2000015     {mdec}   # ~stau_2
+   1000011     {mdec}   # ~e_L
+   1000012     {mdec}   # ~nue_L
+   1000013     {mdec}   # ~mu_L
+   1000014     {mdec}   # ~numu_L
+   1000015     {mdec}   # ~stau_1
+   1000016     {mdec}   # ~nu_tau_L      
 Block alpha                     # Effective Higgs mixing parameter
           -1.05326799e-01       # alpha - evaluated at p^2=0
 Block nmix                  # neutralino mixing matrix
@@ -191,9 +192,12 @@ Block ad Q= 5.00173615e+03
 Block ae Q= 5.00173615e+03  
   1  1     7.12153835e-07      # Ae(Q)MSSM DRbar
   2  2     7.12162891e-07      # Amu(Q)MSSM DRbar
-  3  3     7.14829898e-07      # Atau(Q)MSSM DRbar""".format( 
+  3  3     7.14829898e-07      # Atau(Q)MSSM DRbar
+""".format( 
     mN1=mN1, mN2=mN2, mN3=mN3, mN4=mN4, 
-    mC1=mC1, mC2=mC2, msf=msf,
+    mC1=mC1, mC2=mC2, 
+    mqL=mqL, mqR=mqR, 
+    mdec=mdec,
     U11=U11,  U12=U12,  U21=U21,  U22=U22, 
     V11=V11,  V12=V12,  V21=V21,  V22=V22,     
     N11=N11,  N12=N12,  N13=N13,  N14=N14, 

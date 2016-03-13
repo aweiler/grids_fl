@@ -50,49 +50,64 @@ cp -v out*.dat /home/t30/wlr/gi23pah/Projects/EW_Fastlim/grid_results/
 # 11) main_NC-.py         <==  grid_CN++.dat
 # 12) main_NC-.py         <==  grid_CN+-.dat
 
+#mainFile = mainString
 
-fp = open("grid_same.dat")
+mainFile = "_".join( mainString.split() )
+#mainFile.replace(" ","_")
+#print " --- Mainfile ", mainFile 
+fp = open("grid_CN+-.dat")
 for i, line in enumerate(fp):
-     fname=scriptDir+"clustrun_NNsame_"+str(i)+"_NLO.sh"
+     fname=scriptDir+"clustrun_CN+_"+str(i)+mainFile+".sh"
      runfile = open(fname,"w")
      runfile.write(iniString1)
-     runfile.write("python main.py NNsame "+ line.rstrip()+ mainString)
+     runfile.write("python main.py NC+ "+ line.rstrip()+ mainString)
      runfile.write(finalString(fname))
      runfile.close()
      print "qsub ",queue, fname
 fp.close()
-
-fp = open("grid_XX++.dat")
-for i, line in enumerate(fp):
-    fname=scriptDir+"clustrun_NN++_"+str(i)+"_NLO.sh"
-    runfile = open(fname,"w")
-    runfile.write(iniString1)
-    runfile.write("python main.py NN "+ line.rstrip()+ mainString)
-    runfile.write(finalString(fname))
-    runfile.close()
-    print "qsub ", queue, fname
-fp.close()
-
-fp = open("grid_XX+-.dat")
-for i, line in enumerate(fp):    
-    fname=scriptDir+"clustrun_NN+-_"+str(i)+"_NLO.sh"
-    runfile = open(fname,"w")
-    runfile.write(iniString1)
-    runfile.write("python main.py NN "+ line.rstrip()+ mainString)
-    runfile.write(finalString(fname))
-    runfile.close()
-    print "qsub ", queue , fname
-fp.close()
-
-fp = open("grid_same.dat")
-for i, line in enumerate(fp):
-    fname=scriptDir+"clustrun_CCsame_"+str(i)+"_NLO.sh"
-    runfile = open(fname,"w")
-    runfile.write(iniString1)
-    runfile.write("python main.py CCsame "+ line.rstrip()+ mainString)
-    runfile.write(finalString(fname))
-    runfile.close()
-    print "qsub ", queue, fname
-fp.close()
-
+ 
+#fp = open("grid_same.dat")
+#for i, line in enumerate(fp):
+#     fname=scriptDir+"clustrun_NNsame_"+str(i)+"_NLO.sh"
+#     runfile = open(fname,"w")
+#     runfile.write(iniString1)
+#     runfile.write("python main.py NNsame "+ line.rstrip()+ mainString)
+#     runfile.write(finalString(fname))
+#     runfile.close()
+#     print "qsub ",queue, fname
+#fp.close()
+#
+#fp = open("grid_XX++.dat")
+#for i, line in enumerate(fp):
+#    fname=scriptDir+"clustrun_NN++_"+str(i)+"_NLO.sh"
+#    runfile = open(fname,"w")
+#    runfile.write(iniString1)
+#    runfile.write("python main.py NN "+ line.rstrip()+ mainString)
+#    runfile.write(finalString(fname))
+#    runfile.close()
+#    print "qsub ", queue, fname
+#fp.close()
+#
+#fp = open("grid_XX+-.dat")
+#for i, line in enumerate(fp):    
+#    fname=scriptDir+"clustrun_NN+-_"+str(i)+"_NLO.sh"
+#    runfile = open(fname,"w")
+#    runfile.write(iniString1)
+#    runfile.write("python main.py NN "+ line.rstrip()+ mainString)
+#    runfile.write(finalString(fname))
+#    runfile.close()
+#    print "qsub ", queue , fname
+#fp.close()
+#
+#fp = open("grid_same.dat")
+#for i, line in enumerate(fp):
+#    fname=scriptDir+"clustrun_CCsame_"+str(i)+"_NLO.sh"
+#    runfile = open(fname,"w")
+#    runfile.write(iniString1)
+#    runfile.write("python main.py CCsame "+ line.rstrip()+ mainString)
+#    runfile.write(finalString(fname))
+#    runfile.close()
+#    print "qsub ", queue, fname
+#fp.close()
+#
 
