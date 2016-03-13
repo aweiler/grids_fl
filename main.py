@@ -298,6 +298,7 @@ i1, i2 (prospino) = {i1_pros}, {i2_pros}
 #######################################################
 """.format(mQ=str(mQ),i1=str(i1),i2=str(i2),i1_pros=str(i1_pros),i2_pros=str(i2_pros))
 print run_info
+f.write(run_info)
 
 Coeff = []
 #(mC1, mQ) = (500, 3000)
@@ -332,16 +333,35 @@ if len(Coeff) == 0:
         U = samp[i]['U']
         N = samp[i]['N']
 
+        f.write('---- sample {isamp} ---- \n'.format(isamp=i))
+        f.write('V = \n')
+        np.savetxt(f, V)
+        f.write('U = \n')        
+        np.savetxt(f, U)
+        f.write('N = \n')                
+        np.savetxt(f, N)
+        f.write('Mline = \n')                
+        np.savetxt(f, samp[i]['Mline'])
+
         xval = get_xsec_from_prospino(mNeu, mCha, U, V, N, i1_pros, i2_pros, sqrtS, nlo_string, error_switch)
+
+        f.write('prospino xsec: \n')                        
         if error_switch == '1':
             xsec_05 = np.append(xsec_05, xval[0] )
             xsec_10 = np.append(xsec_10, xval[1] )
             xsec_20 = np.append(xsec_20, xval[2] )
+            f.write(str(xval[0]) + '     --- 0.5 \n')                        
+            f.write(str(xval[1]) + '     --- 1.0 \n')                        
+            f.write(str(xval[2]) + '     --- 2.0 \n')                        
         if error_switch == '0':
             xsec_10 = np.append(xsec_10, xval[0] )
+            f.write(str(xval[0]) + '     --- 1.0 \n')                                    
         print i, xval
     if error_switch == '1': xsec_list = [xsec_05, xsec_10, xsec_20]
     if error_switch == '0': xsec_list = [xsec_10]
+
+
+    f.write('======================== \n')                        
 
     ######################################
     #    Obtaining Coeff
@@ -352,7 +372,14 @@ if len(Coeff) == 0:
     xsec_repro = []
     chi2_result = []
     Coeff = []
+    iscale = 0
     for xsec in xsec_list:
+
+        f.write('Mat {isc} = \n'.format(isc=iscale))
+        np.savetxt(f, Mat)
+        f.write('xsec {isc} = \n'.format(isc=iscale))
+        np.savetxt(f, xsec)
+        iscale += 1
 
         ######################################
         if 'NC' in run_mode:

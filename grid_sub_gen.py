@@ -53,17 +53,6 @@ cp -v out*.dat /home/t30/wlr/gi23pah/Projects/EW_Fastlim/grid_results/
 
 fp = open("grid_same.dat")
 for i, line in enumerate(fp):
-    fname=scriptDir+"clustrun_CCsame_"+str(i)+"_NLO.sh"
-    runfile = open(fname,"w")
-    runfile.write(iniString1)
-    runfile.write("python main.py CCsame "+ line.rstrip()+ mainString)
-    runfile.write(finalString(fname))
-    runfile.close()
-    print "qsub ", queue, fname
-fp.close()
-
-fp = open("grid_same.dat")
-for i, line in enumerate(fp):
      fname=scriptDir+"clustrun_NNsame_"+str(i)+"_NLO.sh"
      runfile = open(fname,"w")
      runfile.write(iniString1)
@@ -94,3 +83,16 @@ for i, line in enumerate(fp):
     runfile.close()
     print "qsub ", queue , fname
 fp.close()
+
+fp = open("grid_same.dat")
+for i, line in enumerate(fp):
+    fname=scriptDir+"clustrun_CCsame_"+str(i)+"_NLO.sh"
+    runfile = open(fname,"w")
+    runfile.write(iniString1)
+    runfile.write("python main.py CCsame "+ line.rstrip()+ mainString)
+    runfile.write(finalString(fname))
+    runfile.close()
+    print "qsub ", queue, fname
+fp.close()
+
+
